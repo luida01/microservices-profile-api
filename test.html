@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Probando Microservicios</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+
+        h2 {
+            color: #34495e;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        button.delete {
+            background-color: #e74c3c;
+        }
+
+        button.delete:hover {
+            background-color: #c0392b;
+        }
+
+        pre {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+
+        .response-area {
+            margin-top: 10px;
+            display: none;
+        }
+
+        .status {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .success {
+            color: #27ae60;
+        }
+
+        .error {
+            color: #e74c3c;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🧪 Probando Microservicios</h1>
+
+    <!-- Configuración -->
+    <div class="card">
+        <h2>🔑 Configuración</h2>
+        <div class="form-group">
+            <label>API Key Lectura:</label>
+            <input type="text" id="apiKeyLectura" value="ms-lectura-key-12345">
+        </div>
+        <div class="form-group">
+            <label>API Key CRUD:</label>
+            <input type="text" id="apiKeyCrud" value="ms-crud-key-67890">
+        </div>
+    </div>
+
+    <!-- Crear Perfil -->
+    <div class="card">
+        <h2>📝 Crear Perfil (MS CRUD)</h2>
+        <div class="form-group">
+            <label>Nombre:</label>
+            <input type="text" id="createNombre" value="Juan">
+        </div>
+        <div class="form-group">
+            <label>Apellido:</label>
+            <input type="text" id="createApellido" value="Pérez">
+        </div>
+        <div class="form-group">
+            <label>Email:</label>
+            <input type="email" id="createEmail" value="juan.perez@example.com">
+        </div>
+        <div class="form-group">
+            <label>Teléfono:</label>
+            <input type="text" id="createTelefono" value="+1-555-0101">
+        </div>
+        <div class="form-group">
+            <label>Dirección:</label>
+            <input type="text" id="createDireccion" value="Calle Principal 123">
+        </div>
+        <button onclick="crearPerfil()">Crear Perfil</button>
+        <div id="createResponse" class="response-area">
+            <div class="status"></div>
+            <pre></pre>
+        </div>
+    </div>
+
+    <!-- Consultar Perfil -->
+    <div class="card">
+        <h2>🔍 Consultar Perfil (MS Lectura)</h2>
+        <div class="form-group">
+            <label>Buscar por Email:</label>
+            <input type="text" id="searchEmail" placeholder="juan.perez@example.com">
+        </div>
+        <button onclick="consultarPerfil()">Buscar</button>
+        <div id="searchResponse" class="response-area">
+            <div class="status"></div>
+            <pre></pre>
+        </div>
+    </div>
+
+    <script>
+        const URL_LECTURA = 'http://localhost:3001/api';
+        const URL_CRUD = 'http://localhost:3002/api';
+
+        async function makeRequest(url, method, apiKey, body = null, responseId) {
+            const responseDiv = document.getElementById(responseId);
+            const statusDiv = responseDiv.querySelector('.status');
+            const pre = responseDiv.querySelector('pre');
+
+            responseDiv.style.display = 'block';
+            statusDiv.textContent = 'Cargando...';
+            statusDiv.className = 'status';
+            pre.textContent = '';
+
+            try {
+                const options = {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': apiKey
+                    }
+                };
+
+                if (body) {
+                    options.body = JSON.stringify(body);
+                }
+
+                const res = await fetch(url, options);
+                const data = await res.json();
+
+                statusDiv.textContent = `Status: ${res.status} ${res.statusText}`;
+                statusDiv.className = res.ok ? 'status success' : 'status error';
+                pre.textContent = JSON.stringify(data, null, 2);
+
+                return data;
+            } catch (error) {
+                statusDiv.textContent = 'Error de conexión';
+                statusDiv.className = 'status error';
+                pre.textContent = error.message;
+            }
+        }
+
+        function crearPerfil() {
+            const body = {
+                nombre: document.getElementById('createNombre').value,
+                apellido: document.getElementById('createApellido').value,
+                email: document.getElementById('createEmail').value,
+                telefono: document.getElementById('createTelefono').value,
+                direccion: document.getElementById('createDireccion').value
+            };
+            const apiKey = document.getElementById('apiKeyCrud').value;
+
+            makeRequest(`${URL_CRUD}/create-profile`, 'POST', apiKey, body, 'createResponse');
+        }
+
+        function consultarPerfil() {
+            const email = document.getElementById('searchEmail').value;
+            const apiKey = document.getElementById('apiKeyLectura').value;
+
+            if (!email) {
+                alert('Ingresa un email');
+                return;
+            }
+
+            makeRequest(`${URL_LECTURA}/get-profile?email=${email}`, 'GET', apiKey, null, 'searchResponse');
+        }
+    </script>
+</body>
+
+</html>

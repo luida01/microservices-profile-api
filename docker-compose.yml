@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  # Base de datos MongoDB
+  mongodb:
+    image: mongo:6
+    container_name: mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: perfiles_db
+    volumes:
+      - mongodb_data:/data/db
+      - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    networks:
+      - microservicios-network
+
+  # Microservicio #1 - Lectura
+  ms-lectura:
+    build:
+      context: ./microservicio-lectura
+      dockerfile: Dockerfile
+    container_name: ms-lectura
+    restart: always
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - MONGODB_URI=mongodb://admin:password123@mongodb:27017/perfiles_db?authSource=admin
+    depends_on:
+      - mongodb
+    networks:
+      - microservicios-network
+
+  # Microservicio #2 - CRUD
+  ms-crud:
+    build:
+      context: ./microservicio-crud
+      dockerfile: Dockerfile
+    container_name: ms-crud
+    restart: always
+    ports:
+      - "3002:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - MONGODB_URI=mongodb://admin:password123@mongodb:27017/perfiles_db?authSource=admin
+      - JWT_SECRET=mi-secreto-super-seguro-cambiar-en-produccion
+    depends_on:
+      - mongodb
+    networks:
+      - microservicios-network
+
+volumes:
+  mongodb_data:
+
+
+networks:
+  microservicios-network:
+    driver: bridge

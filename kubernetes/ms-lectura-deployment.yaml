@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms-lectura-deployment
+  labels:
+    app: ms-lectura
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ms-lectura
+  template:
+    metadata:
+      labels:
+        app: ms-lectura
+    spec:
+      containers:
+      - name: ms-lectura
+        image: ms-lectura:1.0
+        ports:
+        - containerPort: 3000
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "3000"
+        - name: MONGODB_URI
+          value: "mongodb://admin:password123@mongodb-service:27017/perfiles_db?authSource=admin"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 5
